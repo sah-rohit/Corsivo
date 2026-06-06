@@ -238,7 +238,7 @@ function showToast(message, type = "info") {
 }
 
 // Fetch Word Meaning
-async function getMeaning(wordParam = null) {
+async function getMeaning(wordParam = null, allowAutoCorrect = true) {
     const wordInput = document.getElementById("word");
     const searchWord = (wordParam || wordInput.value).trim().toLowerCase();
 
@@ -276,7 +276,7 @@ async function getMeaning(wordParam = null) {
 
         if (!response.ok) {
             if (response.status === 404) {
-                if (activeLanguage === 'en') {
+                if (activeLanguage === 'en' && allowAutoCorrect) {
                     handleWordNotFound(searchWord);
                 } else {
                     renderNotFound(searchWord);
@@ -876,10 +876,15 @@ async function handleWordNotFound(word) {
         const bestMatch = suggestions[0].word;
         const distance = getLevenshteinDistance(word, bestMatch);
 
+        if (bestMatch.toLowerCase() === word.toLowerCase()) {
+            renderNotFoundWithSuggestions(word, suggestions.map(s => s.word));
+            return;
+        }
+
         // Auto-correct spelling if difference is minor
         if (distance <= 2) {
             showToast(`Auto-corrected to "${bestMatch}"`, "info");
-            getMeaning(bestMatch);
+            getMeaning(bestMatch, false);
         } else {
             renderNotFoundWithSuggestions(word, suggestions.map(s => s.word));
         }
@@ -1362,6 +1367,10 @@ function triggerContextMenu(e, clientX, clientY) {
             applyTheme(selectedTheme);
             closeContextMenu();
         };
+    });
+
+    themeButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-theme") === document.body.className);
     });
 
     // Wire random click
