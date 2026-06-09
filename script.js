@@ -50,6 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderHistory();
     renderBookmarks();
 
+    // Initialize Voice TTS Accents and Quiz Game
+    initVoiceSynthesis();
+    initFlashcardGame();
+
     // Register Service Worker
     registerServiceWorker();
 
@@ -86,6 +90,15 @@ function loadSettings() {
         document.getElementById("theme-select-label").textContent = activeOption.textContent;
     }
 
+    // Load API settings
+    const savedApi = localStorage.getItem("lexicon_active_api") || "smart";
+    const activeApiOption = document.querySelector(`#api-select-options li[data-value="${savedApi}"]`);
+    if (activeApiOption) {
+        document.querySelectorAll("#api-select-options li").forEach(li => li.classList.remove("active"));
+        activeApiOption.classList.add("active");
+        document.getElementById("api-select-label").textContent = activeApiOption.textContent;
+    }
+
     // Load History
     const savedHistory = localStorage.getItem("lexicon_history");
     if (savedHistory) {
@@ -107,8 +120,13 @@ function loadSettings() {
         document.querySelectorAll("#lang-select-options li").forEach(li => li.classList.remove("active"));
         activeLangOption.classList.add("active");
 
-        const labelText = activeLangOption.textContent.trim();
-        const shortName = labelText.slice(0, 4) + savedLang.toUpperCase().slice(0, 2);
+        let shortName;
+        if (savedLang === "auto") {
+            shortName = "✨ AUTO";
+        } else {
+            const labelText = activeLangOption.textContent.trim();
+            shortName = labelText.slice(0, 4) + savedLang.toUpperCase().slice(0, 2);
+        }
         const langLabel = document.getElementById("lang-select-label");
         if (langLabel) langLabel.textContent = shortName;
     }
@@ -158,6 +176,12 @@ function initEventListeners() {
             selectContainer.classList.remove("open");
             selectTrigger.setAttribute("aria-expanded", "false");
         } else {
+            // Close other selectors
+            const apiContainer = document.getElementById("api-select-container");
+            if (apiContainer) apiContainer.classList.remove("open");
+            const langContainer = document.getElementById("lang-select-container");
+            if (langContainer) langContainer.classList.remove("open");
+
             selectContainer.classList.add("open");
             selectTrigger.setAttribute("aria-expanded", "true");
         }
@@ -179,18 +203,99 @@ function initEventListeners() {
         });
     });
 
+    // Custom API select dropdown event handlers
+    const apiTrigger = document.getElementById("api-select-trigger");
+    const apiContainer = document.getElementById("api-select-container");
+    const apiOptions = document.querySelectorAll("#api-select-options li");
+    const apiLabel = document.getElementById("api-select-label");
+
+    if (apiTrigger && apiContainer) {
+        apiTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isOpen = apiContainer.classList.contains("open");
+            if (isOpen) {
+                apiContainer.classList.remove("open");
+                apiTrigger.setAttribute("aria-expanded", "false");
+            } else {
+                // Close other selectors
+                if (selectContainer) selectContainer.classList.remove("open");
+                const langContainer = document.getElementById("lang-select-container");
+                if (langContainer) langContainer.classList.remove("open");
+
+                apiContainer.classList.add("open");
+                apiTrigger.setAttribute("aria-expanded", "true");
+            }
+        });
+
+        apiOptions.forEach(option => {
+            option.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const val = option.getAttribute("data-value");
+
+                apiOptions.forEach(li => li.classList.remove("active"));
+                option.classList.add("active");
+
+                apiLabel.textContent = option.textContent;
+                apiContainer.classList.remove("open");
+                apiTrigger.setAttribute("aria-expanded", "false");
+
+                localStorage.setItem("lexicon_active_api", val);
+                showToast(`Search source updated to ${option.textContent}!`, "success");
+            });
+        });
+    }
+
     document.addEventListener("click", () => {
         if (selectContainer) {
             selectContainer.classList.remove("open");
             selectTrigger.setAttribute("aria-expanded", "false");
         }
+        if (apiContainer) {
+            apiContainer.classList.remove("open");
+            apiTrigger.setAttribute("aria-expanded", "false");
+        }
     });
+
+    // Deck Select (Flashcard) custom dropdown
+    const deckTrigger = document.getElementById("deck-select-trigger");
+    const deckContainer = document.getElementById("deck-select-container");
+    const deckOptions = document.querySelectorAll("#deck-select-options li");
+    const deckLabel = document.getElementById("deck-select-label");
+
+    if (deckTrigger && deckContainer) {
+        deckTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleInlineSelect("deck-select-container");
+        });
+
+        deckOptions.forEach(option => {
+            option.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const val = option.getAttribute("data-value");
+                selectInlineOption("deck-select-container", val, option.textContent);
+                initFlashcardGame();
+            });
+        });
+    }
+
+    // Voice Accent Select custom dropdown
+    const voiceTrigger = document.getElementById("voice-select-trigger");
+    const voiceContainer = document.getElementById("voice-select-container");
+
+    if (voiceTrigger && voiceContainer) {
+        voiceTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleInlineSelect("voice-select-container");
+        });
+    }
 }
 
 function getThemeName(themeId) {
     const themes = {
         'dark': 'Obsidian Dark',
         'cyber': 'Midnight Cyber',
+        'emerald': 'Emerald Forest',
+        'sakura': 'Sunset Sakura',
         'light': 'Light Glass',
         'sepia': 'Sepia Paper'
     };
@@ -247,6 +352,9 @@ async function getMeaning(wordParam = null, allowAutoCorrect = true) {
         return;
     }
 
+    // Switch to definitions tab automatically on search
+    switchMainTab('definitions');
+
     // Smooth Scroll to Top on Search
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -254,6 +362,39 @@ async function getMeaning(wordParam = null, allowAutoCorrect = true) {
     if (wordParam) {
         wordInput.value = wordParam;
         document.getElementById("clear-btn").classList.add("visible");
+    }
+
+    // Auto Language Detection
+    let langToUse = activeLanguage;
+    if (activeLanguage === 'auto') {
+        // Script-based detection
+        if (/[\u0600-\u06FF]/.test(searchWord)) {
+            langToUse = 'ar';
+        } else if (/[\u0400-\u04FF]/.test(searchWord)) {
+            langToUse = 'ru';
+        } else if (/[\u0900-\u097F]/.test(searchWord)) {
+            langToUse = 'hi';
+        } else if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(searchWord)) {
+            langToUse = 'ja';
+        } else if (/[\uAC00-\uD7AF]/.test(searchWord)) {
+            langToUse = 'ko';
+        } else if (/[\u4E00-\u9FFF]/.test(searchWord)) {
+            langToUse = 'zh';
+        }
+
+        if (langToUse !== 'auto') {
+            // Update Language Dropdown Selector UI dynamically
+            const opt = document.querySelector(`#lang-select-options li[data-value="${langToUse}"]`);
+            if (opt) {
+                document.querySelectorAll("#lang-select-options li").forEach(li => li.classList.remove("active"));
+                opt.classList.add("active");
+                const shortName = opt.textContent.trim().slice(0, 4) + langToUse.toUpperCase().slice(0, 2);
+                document.getElementById("lang-select-label").textContent = shortName;
+            }
+            activeLanguage = langToUse;
+            localStorage.setItem("lexicon_active_language", langToUse);
+            showToast(`Auto-detected language: ${getLangName(langToUse)}`, "success");
+        }
     }
 
     renderLoading();
@@ -271,37 +412,51 @@ async function getMeaning(wordParam = null, allowAutoCorrect = true) {
         return;
     }
 
-    try {
-        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${activeLanguage}/${searchWord}`);
+    const apiSource = localStorage.getItem("lexicon_active_api") || "smart";
 
-        if (!response.ok) {
-            if (response.status === 404) {
-                if (activeLanguage === 'en' && allowAutoCorrect) {
-                    handleWordNotFound(searchWord);
-                } else {
-                    renderNotFound(searchWord);
+    try {
+        let wordData = null;
+
+        if (apiSource === 'smart') {
+            wordData = await fetchSmartMeaning(searchWord);
+        } else if (apiSource === 'free') {
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${activeLanguage}/${searchWord}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    if (activeLanguage === 'en' && allowAutoCorrect) {
+                        handleWordNotFound(searchWord);
+                        return;
+                    } else {
+                        renderNotFound(searchWord);
+                        return;
+                    }
                 }
-            } else {
-                throw new Error("API Network issue");
+                throw new Error("Free Dictionary API Issue");
             }
-            return;
+            const data = await response.json();
+            wordData = data[0];
+        } else if (apiSource === 'wiktionary') {
+            wordData = await fetchWiktionaryMeaning(searchWord);
+        } else if (apiSource === 'datamuse') {
+            wordData = await fetchDatamuseMeaning(searchWord);
         }
 
-        const data = await response.json();
+        if (!wordData) {
+            renderNotFound(searchWord);
+            return;
+        }
 
         // Add to Search History
         addToHistory(searchWord);
 
         // Save definitions to offline LocalStorage cache
-        saveWordToCache(searchWord, data[0]);
+        saveWordToCache(searchWord, wordData);
 
         // Render results
-        renderResult(data[0]);
+        renderResult(wordData);
 
-        // Asynchronously fetch related word recommendations (English only)
-        if (activeLanguage === 'en') {
-            fetchRelatedWords(searchWord);
-        }
+        // Fetch related word explorer data in the background
+        fetchExplorerData(searchWord);
 
     } catch (error) {
         console.error(error);
@@ -364,13 +519,19 @@ function renderResult(wordData) {
                     </button>
                     <div class="speech-speed-wrapper" title="Pronunciation Speed">
                         <span>Speed:</span>
-                        <select class="speech-speed-select" onchange="changeSpeechRate(this.value)" aria-label="Playback speed select">
-                            <option value="0.5" ${speechRate === "0.5" ? "selected" : ""}>0.5x</option>
-                            <option value="0.75" ${speechRate === "0.75" ? "selected" : ""}>0.75x</option>
-                            <option value="1.0" ${speechRate === "1.0" ? "selected" : ""}>1.0x</option>
-                            <option value="1.25" ${speechRate === "1.25" ? "selected" : ""}>1.25x</option>
-                            <option value="1.5" ${speechRate === "1.5" ? "selected" : ""}>1.5x</option>
-                        </select>
+                        <div class="inline-custom-select speed-select" id="speed-select-container">
+                            <button class="inline-select-trigger" id="speed-select-trigger" aria-haspopup="listbox" aria-expanded="false" onclick="event.stopPropagation(); toggleInlineSelect('speed-select-container')">
+                                <span id="speed-select-label">${speechRate}x</span>
+                                <svg class="ics-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <ul class="inline-select-options" id="speed-select-options" role="listbox">
+                                <li data-value="0.5" role="option" ${speechRate === "0.5" ? 'class="active"' : ""} onclick="event.stopPropagation(); selectInlineOption('speed-select-container', '0.5', '0.5x'); changeSpeechRate('0.5')">0.5x</li>
+                                <li data-value="0.75" role="option" ${speechRate === "0.75" ? 'class="active"' : ""} onclick="event.stopPropagation(); selectInlineOption('speed-select-container', '0.75', '0.75x'); changeSpeechRate('0.75')">0.75x</li>
+                                <li data-value="1.0" role="option" ${speechRate === "1.0" ? 'class="active"' : ""} onclick="event.stopPropagation(); selectInlineOption('speed-select-container', '1.0', '1.0x'); changeSpeechRate('1.0')">1.0x</li>
+                                <li data-value="1.25" role="option" ${speechRate === "1.25" ? 'class="active"' : ""} onclick="event.stopPropagation(); selectInlineOption('speed-select-container', '1.25', '1.25x'); changeSpeechRate('1.25')">1.25x</li>
+                                <li data-value="1.5" role="option" ${speechRate === "1.5" ? 'class="active"' : ""} onclick="event.stopPropagation(); selectInlineOption('speed-select-container', '1.5', '1.5x'); changeSpeechRate('1.5')">1.5x</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -532,17 +693,32 @@ function playPronunciation(word, audioUrl) {
 function useTextToSpeech(word) {
     if ('speechSynthesis' in window) {
         const audioBtn = document.querySelector(".audio-btn");
-        audioBtn.classList.add("playing");
+        if (audioBtn) audioBtn.classList.add("playing");
 
         const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = getVoiceLangCode(activeLanguage);
+        
+        // Custom Voice Accent selection
+        const savedVoiceUri = localStorage.getItem("lexicon_voice_uri");
+        if (savedVoiceUri) {
+            const voices = window.speechSynthesis.getVoices();
+            const chosenVoice = voices.find(v => v.voiceURI === savedVoiceUri);
+            if (chosenVoice) {
+                utterance.voice = chosenVoice;
+            }
+        }
+        
+        if (!utterance.voice) {
+            utterance.lang = getVoiceLangCode(activeLanguage);
+        }
+        
+        utterance.pitch = parseFloat(localStorage.getItem("lexicon_speech_pitch") || "1.0");
         utterance.rate = parseFloat(localStorage.getItem("lexicon_speech_rate") || "1.0");
 
         utterance.onend = () => {
-            audioBtn.classList.remove("playing");
+            if (audioBtn) audioBtn.classList.remove("playing");
         };
         utterance.onerror = () => {
-            audioBtn.classList.remove("playing");
+            if (audioBtn) audioBtn.classList.remove("playing");
             showToast("Pronunciation audio unavailable.", "error");
         };
 
@@ -1220,6 +1396,8 @@ function createContextMenuHTML() {
             <li class="context-menu-themes-row">
                 <button class="ctx-theme-btn" data-theme="dark" title="Obsidian Dark"><span class="color-dot obsidian"></span></button>
                 <button class="ctx-theme-btn" data-theme="cyber" title="Midnight Cyber"><span class="color-dot cyber"></span></button>
+                <button class="ctx-theme-btn" data-theme="emerald" title="Emerald Forest"><span class="color-dot emerald"></span></button>
+                <button class="ctx-theme-btn" data-theme="sakura" title="Sunset Sakura"><span class="color-dot sakura"></span></button>
                 <button class="ctx-theme-btn" data-theme="light" title="Light Glass"><span class="color-dot light"></span></button>
                 <button class="ctx-theme-btn" data-theme="sepia" title="Sepia Paper"><span class="color-dot sepia"></span></button>
             </li>
@@ -1631,6 +1809,8 @@ function initLangSelector() {
             // Close other custom dropdown select elements if open
             const themeContainer = document.getElementById("theme-select-container");
             if (themeContainer) themeContainer.classList.remove("open");
+            const apiContainer = document.getElementById("api-select-container");
+            if (apiContainer) apiContainer.classList.remove("open");
 
             container.classList.add("open");
             trigger.setAttribute("aria-expanded", "true");
@@ -1645,8 +1825,13 @@ function initLangSelector() {
             options.forEach(li => li.classList.remove("active"));
             option.classList.add("active");
 
-            const textContent = option.textContent.trim();
-            const shortName = textContent.slice(0, 4) + val.toUpperCase().slice(0, 2);
+            let shortName;
+            if (val === 'auto') {
+                shortName = "✨ AUTO";
+            } else {
+                const textContent = option.textContent.trim();
+                shortName = textContent.slice(0, 4) + val.toUpperCase().slice(0, 2);
+            }
             label.textContent = shortName;
 
             container.classList.remove("open");
@@ -1685,6 +1870,7 @@ function changeLanguage(langCode) {
 
 function getLangPlaceholder(langCode) {
     const placeholders = {
+        'auto': 'Explore word meanings (Auto)...',
         'en': 'Explore word meanings...',
         'es': 'Explorar significados de palabras...',
         'fr': 'Explorer les significations des mots...',
@@ -1693,13 +1879,21 @@ function getLangPlaceholder(langCode) {
         'pt-br': 'Explorar significados de palavras...',
         'ru': 'Исследуйте значения слов...',
         'tr': 'Kelime anlamlarını keşfedin...',
-        'ar': 'استكشف معاني الكلمات...'
+        'ar': 'استكشف معاني الكلمات...',
+        'hi': 'शब्दों के अर्थ खोजें...',
+        'ja': '言葉の意味を調べる...',
+        'zh': '探索词语释义...',
+        'ko': '단어 뜻 탐색하기...',
+        'nl': 'Ontdek woordbetekenissen...',
+        'pl': 'Szukaj znaczeń słów...',
+        'sv': 'Utforska ords betydelser...'
     };
     return placeholders[langCode] || 'Explore word meanings...';
 }
 
 function getLangName(langCode) {
     const names = {
+        'auto': 'Auto Detect',
         'en': 'English',
         'es': 'Spanish',
         'fr': 'French',
@@ -1708,7 +1902,14 @@ function getLangName(langCode) {
         'pt-br': 'Portuguese',
         'ru': 'Russian',
         'tr': 'Turkish',
-        'ar': 'Arabic'
+        'ar': 'Arabic',
+        'hi': 'Hindi',
+        'ja': 'Japanese',
+        'zh': 'Chinese',
+        'ko': 'Korean',
+        'nl': 'Dutch',
+        'pl': 'Polish',
+        'sv': 'Swedish'
     };
     return names[langCode] || langCode;
 }
@@ -1792,7 +1993,14 @@ function getVoiceLangCode(langCode) {
         'pt-br': 'pt-BR',
         'ru': 'ru-RU',
         'tr': 'tr-TR',
-        'ar': 'ar-SA'
+        'ar': 'ar-SA',
+        'hi': 'hi-IN',
+        'ja': 'ja-JP',
+        'zh': 'zh-CN',
+        'ko': 'ko-KR',
+        'nl': 'nl-NL',
+        'pl': 'pl-PL',
+        'sv': 'sv-SE'
     };
     return voiceLangs[langCode] || 'en-US';
 }
@@ -1801,3 +2009,632 @@ function changeSpeechRate(rate) {
     localStorage.setItem("lexicon_speech_rate", rate);
     showToast(`Speech rate set to ${rate}x.`, "info");
 }
+
+// --- INLINE CUSTOM SELECT UTILITY FUNCTIONS ---
+
+function toggleInlineSelect(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const isOpen = container.classList.contains("open");
+
+    // Close ALL open inline selects first
+    document.querySelectorAll(".inline-custom-select.open").forEach(el => {
+        el.classList.remove("open");
+        const trigger = el.querySelector(".inline-select-trigger");
+        if (trigger) trigger.setAttribute("aria-expanded", "false");
+    });
+
+    if (!isOpen) {
+        container.classList.add("open");
+        const trigger = container.querySelector(".inline-select-trigger");
+        if (trigger) trigger.setAttribute("aria-expanded", "true");
+    }
+}
+
+function selectInlineOption(containerId, value, labelText) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Update active state
+    container.querySelectorAll(".inline-select-options li").forEach(li => {
+        li.classList.remove("active");
+        if (li.getAttribute("data-value") === value) {
+            li.classList.add("active");
+        }
+    });
+
+    // Update label
+    const label = container.querySelector("[id$='-label']");
+    if (label) label.textContent = labelText;
+
+    // Close dropdown
+    container.classList.remove("open");
+    const trigger = container.querySelector(".inline-select-trigger");
+    if (trigger) trigger.setAttribute("aria-expanded", "false");
+}
+
+// Close inline selects on outside click
+document.addEventListener("click", () => {
+    document.querySelectorAll(".inline-custom-select.open").forEach(el => {
+        el.classList.remove("open");
+        const trigger = el.querySelector(".inline-select-trigger");
+        if (trigger) trigger.setAttribute("aria-expanded", "false");
+    });
+});
+
+// --- NEW UPGRADE FEATURES (MULTIPLE APIS, AUTO-DETECT, TABS, EXPLORER, FLASHCARDS, NOTEBOOK) ---
+
+// Tab Switching Mechanics
+function switchMainTab(tabId) {
+    const links = document.querySelectorAll(".tab-link");
+    const contents = document.querySelectorAll(".main-tab-content");
+
+    links.forEach(link => {
+        if (link.getAttribute("data-tab") === tabId) {
+            link.classList.add("active");
+        } else {
+            link.classList.remove("active");
+        }
+    });
+
+    contents.forEach(content => {
+        if (content.id === `main-tab-${tabId}`) {
+            content.classList.add("active");
+        } else {
+            content.classList.remove("active");
+        }
+    });
+}
+
+// Wiktionary API Query and Parser
+async function fetchWiktionaryMeaning(word) {
+    const response = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(word)}`);
+    if (!response.ok) throw new Error("Wiktionary API 404");
+    const data = await response.json();
+    const wordData = parseWiktionaryData(word, data);
+    if (!wordData) throw new Error("Wiktionary Data Empty");
+    return wordData;
+}
+
+function parseWiktionaryData(word, data) {
+    let langKey = activeLanguage;
+    const availableLangs = Object.keys(data);
+
+    if (activeLanguage === 'auto') {
+        const supported = ['en', 'es', 'fr', 'de', 'it', 'ru', 'tr', 'ar', 'hi', 'ja', 'zh', 'ko', 'nl', 'pl', 'sv'];
+        // wiktionary uses 'pt' for Portuguese, map pt-br to pt
+        const matches = availableLangs.filter(l => supported.includes(l) || l === 'pt');
+        const nonEng = matches.filter(l => l !== 'en');
+        const detected = nonEng.length > 0 ? nonEng[0] : (matches.includes('en') ? 'en' : availableLangs[0]);
+        
+        langKey = detected;
+        const mappedLang = (langKey === 'pt') ? 'pt-br' : langKey;
+        
+        // Update UI
+        const opt = document.querySelector(`#lang-select-options li[data-value="${mappedLang}"]`);
+        if (opt) {
+            document.querySelectorAll("#lang-select-options li").forEach(li => li.classList.remove("active"));
+            opt.classList.add("active");
+            const shortName = opt.textContent.trim().slice(0, 4) + mappedLang.toUpperCase().slice(0, 2);
+            document.getElementById("lang-select-label").textContent = shortName;
+        }
+        activeLanguage = mappedLang;
+        localStorage.setItem("lexicon_active_language", mappedLang);
+        showToast(`Auto-detected language: ${getLangName(mappedLang)}`, "success");
+    }
+
+    let queryLang = langKey;
+    if (queryLang === 'pt-br') queryLang = 'pt';
+    
+    const meaningsList = data[queryLang] || data['en'] || data[availableLangs[0]];
+    if (!meaningsList) return null;
+
+    const wordData = {
+        word: word,
+        phonetics: [],
+        phonetic: "",
+        meanings: []
+    };
+
+    const posGroups = {};
+    meaningsList.forEach(item => {
+        const pos = item.partOfSpeech || 'Other';
+        if (!posGroups[pos]) {
+            posGroups[pos] = {
+                partOfSpeech: pos,
+                definitions: [],
+                synonyms: [],
+                antonyms: []
+            };
+        }
+        (item.definitions || []).forEach(def => {
+            const cleanDef = def.definition.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+            const cleanExamples = (def.examples || []).map(ex => ex.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
+            posGroups[pos].definitions.push({
+                definition: cleanDef,
+                example: cleanExamples[0] || ""
+            });
+        });
+    });
+
+    wordData.meanings = Object.values(posGroups);
+    return wordData;
+}
+
+// Datamuse Definition Query and Parser
+async function fetchDatamuseMeaning(word) {
+    const response = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&md=d&max=1`);
+    if (!response.ok) throw new Error("Datamuse API Network Issue");
+    const data = await response.json();
+    if (!data || data.length === 0 || !data[0].defs || data[0].defs.length === 0) {
+        throw new Error("Datamuse API 404");
+    }
+    return parseDatamuseData(word, data[0]);
+}
+
+function parseDatamuseData(word, entry) {
+    const wordData = {
+        word: entry.word || word,
+        phonetics: [],
+        phonetic: "",
+        meanings: []
+    };
+
+    const posGroups = {};
+    (entry.defs || []).forEach(defStr => {
+        const tabIdx = defStr.indexOf('\t');
+        let posCode = 'u';
+        let definition = defStr;
+        if (tabIdx !== -1) {
+            posCode = defStr.slice(0, tabIdx);
+            definition = defStr.slice(tabIdx + 1);
+        }
+        const posMap = {
+            'n': 'Noun',
+            'v': 'Verb',
+            'adj': 'Adjective',
+            'adv': 'Adverb',
+            'u': 'Other'
+        };
+        const pos = posMap[posCode] || 'Other';
+        if (!posGroups[pos]) {
+            posGroups[pos] = {
+                partOfSpeech: pos,
+                definitions: [],
+                synonyms: [],
+                antonyms: []
+            };
+        }
+        posGroups[pos].definitions.push({
+            definition: definition.trim(),
+            example: ""
+        });
+    });
+
+    wordData.meanings = Object.values(posGroups);
+    return wordData;
+}
+
+// Smart Search Fallback Chain
+async function fetchSmartMeaning(word) {
+    // Try Free Dictionary API first (English primarily)
+    try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${activeLanguage === 'auto' ? 'en' : activeLanguage}/${word}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data && data[0]) return data[0];
+        }
+    } catch (err) {
+        console.log("Smart Search - Free Dictionary Failed, trying Wiktionary", err);
+    }
+
+    // Try Wiktionary REST API next (Multilingual support)
+    try {
+        const wikData = await fetchWiktionaryMeaning(word);
+        if (wikData) return wikData;
+    } catch (err) {
+        console.log("Smart Search - Wiktionary Failed, trying Datamuse", err);
+    }
+
+    // Try Datamuse Definitions last
+    return await fetchDatamuseMeaning(word);
+}
+
+// Visual Word Explorer (Semantic grids, rhymes, and sounds-like clouds)
+async function fetchExplorerData(word) {
+    const explorerContent = document.getElementById("explorer-content");
+    const placeholder = document.querySelector(".explorer-placeholder");
+    if (!explorerContent) return;
+
+    try {
+        const [synsResp, rhymesResp, soundsResp] = await Promise.all([
+            fetch(`https://api.datamuse.com/words?rel_syn=${word}&max=8`),
+            fetch(`https://api.datamuse.com/words?rel_rhy=${word}&max=8`),
+            fetch(`https://api.datamuse.com/words?sl=${word}&max=8`)
+        ]);
+
+        const syns = synsResp.ok ? await synsResp.json() : [];
+        const rhymes = rhymesResp.ok ? await rhymesResp.json() : [];
+        const sounds = soundsResp.ok ? await soundsResp.json() : [];
+
+        if (placeholder) placeholder.style.display = "none";
+        explorerContent.style.display = "block";
+
+        renderExplorerContent({ word, syns, rhymes, sounds });
+    } catch (err) {
+        console.error("Failed to load explorer data:", err);
+        if (placeholder) placeholder.style.display = "flex";
+        explorerContent.style.display = "none";
+    }
+}
+
+function renderExplorerContent(data) {
+    const container = document.getElementById("explorer-content");
+    if (!container) return;
+
+    const renderTags = (list) => {
+        if (!list || list.length === 0) return `<li class="empty-state" style="padding:0.5rem 0;">No connections found.</li>`;
+        return list.map(item => `
+            <span class="explorer-tag" onclick="getMeaning('${item.word.replace(/'/g, "\\'")}')">${item.word}</span>
+        `).join("");
+    };
+
+    container.innerHTML = `
+        <h3 style="font-family: var(--font-serif); font-size: 1.8rem; margin-bottom: 0.25rem;">${data.word}</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Semantic & Phonetic Network Explorer</p>
+        
+        <div class="explorer-grid">
+            <div class="explorer-card">
+                <div class="explorer-card-title">Synonyms & Mean-Likes</div>
+                <div class="explorer-tags">
+                    ${renderTags(data.syns)}
+                </div>
+            </div>
+
+            <div class="explorer-card">
+                <div class="explorer-card-title">Rhyming Words</div>
+                <div class="explorer-tags">
+                    ${renderTags(data.rhymes)}
+                </div>
+            </div>
+
+            <div class="explorer-card">
+                <div class="explorer-card-title">Phonetic Sounds Like</div>
+                <div class="explorer-tags">
+                    ${renderTags(data.sounds)}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Voice synthesis accents settings
+function initVoiceSynthesis() {
+    if (!('speechSynthesis' in window)) return;
+    
+    // Voices load asynchronously
+    const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        const optionsList = document.getElementById("voice-select-options");
+        const voiceLabel = document.getElementById("voice-select-label");
+        if (!optionsList) return;
+
+        // Restore saved voice
+        const saved = localStorage.getItem("lexicon_voice_uri");
+        const defVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+        const activeUri = saved || (defVoice ? defVoice.voiceURI : "");
+
+        if (!saved && defVoice) {
+            localStorage.setItem("lexicon_voice_uri", defVoice.voiceURI);
+        }
+
+        optionsList.innerHTML = voices.map(v => {
+            const isActive = v.voiceURI === activeUri;
+            const displayName = `${v.name} (${v.lang})`;
+            return `<li data-value="${v.voiceURI}" role="option" class="${isActive ? 'active' : ''}">${displayName}</li>`;
+        }).join("");
+
+        // Set label to active voice name
+        const activeVoice = voices.find(v => v.voiceURI === activeUri);
+        if (activeVoice && voiceLabel) {
+            voiceLabel.textContent = `${activeVoice.name} (${activeVoice.lang})`;
+        }
+
+        // Attach click handlers to options
+        optionsList.querySelectorAll("li").forEach(li => {
+            li.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const val = li.getAttribute("data-value");
+                selectInlineOption("voice-select-container", val, li.textContent);
+                localStorage.setItem("lexicon_voice_uri", val);
+                showToast("Synthesizer accent updated!", "success");
+            });
+        });
+    };
+
+    loadVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    // Load Pitch & Rate sliders
+    const savedPitch = localStorage.getItem("lexicon_speech_pitch") || "1.0";
+    const savedRate = localStorage.getItem("lexicon_speech_rate") || "1.0";
+
+    const pitchSlider = document.getElementById("pitch-slider");
+    const rateSlider = document.getElementById("rate-slider");
+
+    if (pitchSlider) {
+        pitchSlider.value = savedPitch;
+        document.getElementById("pitch-val").textContent = savedPitch;
+    }
+    if (rateSlider) {
+        rateSlider.value = savedRate;
+        document.getElementById("rate-val-tab").textContent = savedRate + 'x';
+    }
+}
+
+function updatePitchLabel(val) {
+    document.getElementById("pitch-val").textContent = val;
+    localStorage.setItem("lexicon_speech_pitch", val);
+}
+
+function updateRateLabel(val) {
+    document.getElementById("rate-val-tab").textContent = val + 'x';
+    localStorage.setItem("lexicon_speech_rate", val);
+
+    // Sync the speed select label in the definitions panel if visible
+    const speedLabel = document.getElementById("speed-select-label");
+    if (speedLabel) {
+        speedLabel.textContent = val + 'x';
+        // Also update active state
+        const container = document.getElementById("speed-select-container");
+        if (container) {
+            container.querySelectorAll(".inline-select-options li").forEach(li => {
+                li.classList.toggle("active", li.getAttribute("data-value") === val);
+            });
+        }
+    }
+}
+
+function saveVoiceSettings() {
+    // Voice settings are saved inline on option click
+}
+
+function testVoiceSynthesis() {
+    const wordInput = document.getElementById("word");
+    const testWord = wordInput ? (wordInput.value.trim() || "Corsivo") : "Corsivo";
+    useTextToSpeech(testWord);
+}
+
+// Flashcard game mechanics
+const CURATED_FLASHCARDS = [
+    { word: "serendipity", def: "The occurrence of finding valuable or agreeable things by chance." },
+    { word: "petrichor", def: "A pleasant smell that frequently accompanies the first rain after a long period of warm, dry weather." },
+    { word: "ephemeral", def: "Lasting for a very short time; transient or fleeting." },
+    { word: "mellifluous", def: "Sweet or musical; pleasant to hear (especially voices or sounds)." },
+    { word: "solitude", def: "The state or situation of being alone, especially in a peaceful way." },
+    { word: "sonorous", def: "Capable of producing a deep, rich, or ringing sound." },
+    { word: "liminal", def: "Relating to a transitional or initial stage of a process; occupying a position at a boundary." },
+    { word: "iridescent", def: "Showing luminous colors that seem to change when seen from different angles." },
+    { word: "halcyon", def: "Denoting a period of time in the past that was idyllically happy and peaceful." },
+    { word: "quintessential", def: "Representing the most perfect or typical example of a quality or class." },
+    { word: "tenacious", def: "Tending to keep a firm hold of something; clinging or adhering closely; persistent." },
+    { word: "synergy", def: "The interaction or cooperation of two or more organizations, substances, or agents to produce a combined effect greater than the sum of their separate effects." },
+    { word: "panacea", def: "A solution or remedy for all difficulties or diseases; a universal cure." },
+    { word: "zeitgeist", def: "The defining spirit or mood of a particular period of history as shown by the ideas and beliefs of the time." },
+    { word: "loquacious", def: "Tending to talk a great deal; extremely talkative." },
+    { word: "cacophony", def: "A harsh, discordant mixture of sounds." },
+    { word: "fortitude", def: "Courage in pain or adversity; mental and emotional strength in facing difficulty." },
+    { word: "mitigate", def: "Make less severe, serious, or painful; alleviate." },
+    { word: "pedantic", def: "Excessively concerned with minor details and rules or with displaying academic learning." },
+    { word: "salient", def: "Most noticeable or important; prominent or conspicuous." }
+];
+
+let flashcardQueue = [];
+let currentCardIndex = 0;
+let flashcardScore = 0;
+
+function initFlashcardGame() {
+    // Read deck value from custom inline dropdown
+    const activeItem = document.querySelector("#deck-select-options li.active");
+    const deckVal = activeItem ? activeItem.getAttribute("data-value") : "curated";
+    const cardEl = document.getElementById("flashcard");
+    if (cardEl) cardEl.classList.remove("flipped");
+
+    if (deckVal === "bookmarks") {
+        if (bookmarkedWords.length === 0) {
+            showToast("No bookmarked words found. Loading premium curated words instead.", "info");
+            selectInlineOption("deck-select-container", "curated", "Premium Vocabulary");
+            flashcardQueue = [...CURATED_FLASHCARDS];
+        } else {
+            // Build queue from bookmarks and cache notes/definitions
+            const wordCache = JSON.parse(localStorage.getItem("lexicon_word_cache") || "{}");
+            const notesObj = JSON.parse(localStorage.getItem("lexicon_notes") || "{}");
+            
+            flashcardQueue = bookmarkedWords.map(word => {
+                const note = notesObj[word.toLowerCase()] || "";
+                
+                // Find definition in cache
+                const cacheKey = Object.keys(wordCache).find(k => k.endsWith(`:${word.toLowerCase()}`) || k === word.toLowerCase());
+                let definition = note || "Search word definitions to populate flashcard details.";
+                if (wordCache[cacheKey]) {
+                    const meanings = wordCache[cacheKey].meanings || [];
+                    if (meanings.length > 0 && meanings[0].definitions.length > 0) {
+                        definition = meanings[0].definitions[0].definition;
+                    }
+                }
+                return { word, def: definition };
+            });
+        }
+    } else {
+        flashcardQueue = [...CURATED_FLASHCARDS];
+    }
+
+    // Shuffle queue
+    flashcardQueue.sort(() => Math.random() - 0.5);
+    currentCardIndex = 0;
+    flashcardScore = 0;
+
+    renderFlashcard();
+}
+
+function flipFlashcard() {
+    const card = document.getElementById("flashcard");
+    if (card) card.classList.toggle("flipped");
+}
+
+function renderFlashcard() {
+    const cardWord = document.getElementById("flashcard-word");
+    const cardDef = document.getElementById("flashcard-definition");
+    const cardProgress = document.getElementById("flashcard-progress");
+    const cardScore = document.getElementById("flashcard-score");
+
+    if (flashcardQueue.length === 0) return;
+
+    const currentCard = flashcardQueue[currentCardIndex];
+    if (cardWord) cardWord.textContent = currentCard.word;
+    if (cardDef) cardDef.textContent = currentCard.def;
+
+    if (cardProgress) cardProgress.textContent = `Card ${currentCardIndex + 1} of ${flashcardQueue.length}`;
+    if (cardScore) cardScore.textContent = `Score: ${flashcardScore}/${currentCardIndex}`;
+}
+
+function flashcardAnswer(isCorrect) {
+    const card = document.getElementById("flashcard");
+    if (!card) return;
+
+    // Check if card is flipped, flip it back to front before showing next
+    const wasFlipped = card.classList.contains("flipped");
+    if (wasFlipped) {
+        card.classList.remove("flipped");
+    }
+
+    if (isCorrect) {
+        flashcardScore++;
+        showToast("Correct! Good job.", "success");
+    } else {
+        showToast("Keep studying!", "info");
+    }
+
+    const transitionDelay = wasFlipped ? 300 : 0;
+
+    setTimeout(() => {
+        currentCardIndex++;
+        if (currentCardIndex >= flashcardQueue.length) {
+            // End of deck quiz completion summary screen
+            showCustomConfirm(
+                "Quiz Completed!",
+                `Congratulations! You finished the quiz deck. Final Score: ${flashcardScore} out of ${flashcardQueue.length}. Do you want to play again?`,
+                () => {
+                    initFlashcardGame();
+                }
+            );
+            // Reset
+            currentCardIndex = 0;
+            flashcardScore = 0;
+        }
+        renderFlashcard();
+    }, transitionDelay);
+}
+
+// Notebook manager logic
+function renderNotebookNotes() {
+    const list = document.getElementById("notebook-list");
+    if (!list) return;
+
+    const notesObj = JSON.parse(localStorage.getItem("lexicon_notes") || "{}");
+    const words = Object.keys(notesObj);
+
+    if (words.length === 0) {
+        list.innerHTML = '<li class="empty-state">No saved study notes. Write note comments on words to see them here.</li>';
+        return;
+    }
+
+    const searchQuery = (document.getElementById("notebook-search")?.value || "").trim().toLowerCase();
+
+    const filtered = words.filter(w => {
+        if (!searchQuery) return true;
+        if (w.toLowerCase().includes(searchQuery)) return true;
+        if (notesObj[w].toLowerCase().includes(searchQuery)) return true;
+        return false;
+    });
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<li class="empty-state">No matching study notes.</li>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(word => `
+        <li class="notebook-item">
+            <div class="notebook-item-content">
+                <span class="notebook-word-title" onclick="notebookSearchWord('${word.replace(/'/g, "\\'")}')">${word}</span>
+                <p class="notebook-note-text">${escapeHTML(notesObj[word])}</p>
+            </div>
+            <div class="notebook-actions">
+                <button class="notebook-action-btn delete" onclick="deleteNotebookNote(event, '${word.replace(/'/g, "\\'")}')" title="Delete Note">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+        </li>
+    `).join("");
+}
+
+function filterNotebookNotes() {
+    renderNotebookNotes();
+}
+
+function notebookSearchWord(word) {
+    const wordInput = document.getElementById("word");
+    if (wordInput) {
+        wordInput.value = word;
+    }
+    closeInfoModal();
+    getMeaning(word);
+}
+
+function deleteNotebookNote(event, word) {
+    event.stopPropagation();
+    showCustomConfirm(
+        "Delete Note?",
+        `Are you sure you want to permanently delete your study note for the word "${word}"?`,
+        () => {
+            const notesObj = JSON.parse(localStorage.getItem("lexicon_notes") || "{}");
+            delete notesObj[word.toLowerCase()];
+            localStorage.setItem("lexicon_notes", JSON.stringify(notesObj));
+            
+            renderNotebookNotes();
+            
+            // If the deleted note is currently visible in definitions, render it again
+            const activeWordEl = document.querySelector(".word-info h2");
+            if (activeWordEl && activeWordEl.textContent.toLowerCase() === word.toLowerCase()) {
+                const noteContainer = document.getElementById("word-note-container");
+                if (noteContainer) {
+                    noteContainer.innerHTML = renderNoteBlock(word, "");
+                }
+            }
+
+            renderHistory();
+            renderBookmarks();
+            showToast("Note deleted successfully.", "success");
+        }
+    );
+}
+
+// Modify openInfoModal tab trigger to load notebook notes on click
+const originalOpenInfoModal = openInfoModal;
+openInfoModal = function(defaultTabId) {
+    originalOpenInfoModal(defaultTabId);
+    if (defaultTabId === 'notebook') {
+        renderNotebookNotes();
+    }
+};
+
+const originalSwitchInfoTab = switchInfoTab;
+switchInfoTab = function(tabId) {
+    originalSwitchInfoTab(tabId);
+    if (tabId === 'notebook') {
+        renderNotebookNotes();
+    }
+};
+

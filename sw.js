@@ -1,4 +1,4 @@
-const CACHE_NAME = 'corsivo-cache-v1';
+const CACHE_NAME = 'corsivo-cache-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
