@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Source & Auth — Corsivo</title>
+    <meta name="description" content="Corsivo is fully open source with zero login constraints. Accessible codebase under MIT license.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#090616">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+</head>
+<body>
+    <div class="page-layout">
+        <nav class="page-nav">
+            <a href="index.html" class="page-back-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                Dictionary
+            </a>
+            <a href="index.html" class="nav-brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 4c-3.5 0-7 2.5-8.5 6s-.5 7.5 2 10 7 1.5 8.5-.5" />
+                    <path d="M9 15c.5-2.5 2-5.5 4.5-8 3-3 6.5-4 7.5-3s0 4.5-3 7.5c-2.5 2.5-5.5 4-8 4.5z" />
+                    <path d="M13.5 10.5l6-6" stroke-width="1.5" />
+                    <path d="M9 15l-6 6" stroke-width="1.5" />
+                    <circle cx="3" cy="21" r="0.8" fill="currentColor" />
+                </svg>
+                Corsivo
+            </a>
+        </nav>
+
+        <div class="page-card">
+            <svg class="page-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+            <h1>Open Source & Auth</h1>
+            <p class="page-subtitle">Accessible codebase, zero sign-up constraints.</p>
+
+            <p>Corsivo is completely transparent and designed without auth limits:</p>
+
+            <ul>
+                <li><strong>Zero Login Constraints:</strong> There are no registration forms, forgot-password scripts, or profiles. The app loads instantly for everyone — no authentication gates, ever.</li>
+                <li><strong>Code Repository:</strong> The entire codebase is open for public review and contributions on GitHub, showing the journey from a first repository to this modernized revival.</li>
+                <li><strong>Educational Focus:</strong> Rebuilding this as a pure HTML/CSS/JS single-page application shows that high-fidelity web experiences can be created with zero bloated frameworks.</li>
+                <li><strong>MIT Licensed:</strong> Fork it, modify it, learn from it, deploy your own version. The MIT license gives you maximum freedom with minimum restrictions.</li>
+            </ul>
+
+            <h2>Technology Stack</h2>
+            <ul>
+                <li><strong>Frontend:</strong> Vanilla HTML5, CSS3 with custom properties, ES6+ JavaScript — zero build tools required.</li>
+                <li><strong>APIs:</strong> Free Dictionary API, Wiktionary REST API, Datamuse API for word relationships and spell-checking.</li>
+                <li><strong>PWA:</strong> Service Worker with cache-first strategy for offline functionality. Installable as a standalone app on mobile devices.</li>
+                <li><strong>Storage:</strong> Browser LocalStorage for bookmarks, notes, history, and preferences. No server-side data at all.</li>
+            </ul>
+        </div>
+
+        <div class="page-footer">
+            &copy; 2026 Corsivo. Words, beautifully slanted.
+        </div>
+    </div>
+
+    <script>
+        const savedTheme = localStorage.getItem("lexicon_theme") || "dark";
+        document.body.className = savedTheme;
+    </script>
+</body>
+</html>

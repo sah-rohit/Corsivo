@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing — Corsivo</title>
+    <meta name="description" content="Corsivo is 100% free forever. No subscriptions, no ads, no locked features.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#090616">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+</head>
+<body>
+    <div class="page-layout">
+        <nav class="page-nav">
+            <a href="index.html" class="page-back-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                Dictionary
+            </a>
+            <a href="index.html" class="nav-brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 4c-3.5 0-7 2.5-8.5 6s-.5 7.5 2 10 7 1.5 8.5-.5" />
+                    <path d="M9 15c.5-2.5 2-5.5 4.5-8 3-3 6.5-4 7.5-3s0 4.5-3 7.5c-2.5 2.5-5.5 4-8 4.5z" />
+                    <path d="M13.5 10.5l6-6" stroke-width="1.5" />
+                    <path d="M9 15l-6 6" stroke-width="1.5" />
+                    <circle cx="3" cy="21" r="0.8" fill="currentColor" />
+                </svg>
+                Corsivo
+            </a>
+        </nav>
+
+        <div class="page-card">
+            <svg class="page-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h1>Pricing</h1>
+            <p class="page-subtitle">100% Free Forever.</p>
+
+            <p>Corsivo has zero subscription tiers, zero locked features, and zero banner ads:</p>
+
+            <ul>
+                <li><strong>Free Forever:</strong> This app is built out of passion as a portfolio project. You will never be asked for billing details, trials, or premiums. Every feature is unlocked from day one.</li>
+                <li><strong>No Advertisements:</strong> We do not run ads. The layout remains clean, loading fast, and focused on typography and definitions. Your attention is not a product.</li>
+                <li><strong>No Usage Limits:</strong> Search unlimited words, save unlimited bookmarks, create unlimited study notes. There are no artificial caps or paywalls.</li>
+                <li><strong>No Hidden Costs:</strong> Offline caching, flashcard quizzes, multi-language support, voice synthesis, data export — all included at zero cost.</li>
+            </ul>
+
+            <h2>Supporting the Project</h2>
+            <p>If you enjoy Corsivo, the best way to support the project is to star the GitHub repository, share it with friends, or contribute to the open-source codebase.</p>
+        </div>
+
+        <div class="page-footer">
+            &copy; 2026 Corsivo. Words, beautifully slanted.
+        </div>
+    </div>
+
+    <script>
+        const savedTheme = localStorage.getItem("lexicon_theme") || "dark";
+        document.body.className = savedTheme;
+    </script>
+</body>
+</html>

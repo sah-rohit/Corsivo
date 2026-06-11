@@ -1,7 +1,12 @@
-const CACHE_NAME = 'corsivo-cache-v3';
+const CACHE_NAME = 'corsivo-cache-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './about.html',
+  './privacy.html',
+  './terms.html',
+  './pricing.html',
+  './opensource.html',
   './styles.css',
   './script.js',
   './manifest.json',

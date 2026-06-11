@@ -26,6 +26,74 @@ const RANDOM_WORDS = [
     "obdurate", "pedantic", "recalcitrant", "salient", "trepidation", "untenable", "verbose"
 ];
 
+// Per-language curated word lists for WOD and Random
+const LANG_WORD_LISTS = {
+    en: ["serendipity", "petrichor", "ephemeral", "mellifluous", "solitude",
+         "sonorous", "liminal", "iridescent", "halcyon", "aurora",
+         "vellichor", "lucid", "eloquent", "effervescent", "resilient",
+         "luminescent", "wanderlust", "oblivion", "quintessential", "panacea"],
+    es: ["mariposa", "esperanza", "corazón", "amanecer", "libertad",
+         "sueño", "felicidad", "estrella", "aventura", "destino",
+         "naturaleza", "silencio", "viaje", "montaña", "fuego",
+         "océano", "música", "cielo", "lluvia", "primavera"],
+    fr: ["papillon", "bonheur", "lumière", "rêve", "étoile",
+         "soleil", "jardin", "amour", "liberté", "aventure",
+         "nuage", "château", "rivière", "forêt", "pluie",
+         "courage", "fleur", "voyage", "espoir", "aurore"],
+    de: ["Schmetterling", "Fernweh", "Gemütlichkeit", "Sehnsucht", "Wanderlust",
+         "Frühling", "Abendrot", "Freiheit", "Geborgenheit", "Zeitgeist",
+         "Sternschnuppe", "Blütenstaub", "Weltanschauung", "Heimat", "Augenblick",
+         "Sonnenschein", "Traumland", "Regenbogen", "Handschuh", "Gedanke"],
+    it: ["farfalla", "bellezza", "tramonto", "stellato", "dolcezza",
+         "armonia", "avventura", "coraggio", "serenità", "felicità",
+         "primavera", "meraviglia", "sogno", "libertà", "speranza",
+         "abbraccio", "passione", "tempesta", "crepuscolo", "ispirazione"],
+    "pt-br": ["saudade", "borboleta", "esperança", "liberdade", "felicidade",
+              "coragem", "aventura", "estrela", "natureza", "serenidade",
+              "amanhecer", "entardecer", "oceano", "montanha", "tempestade",
+              "sonho", "viagem", "floresta", "primavera", "harmonia"],
+    ru: ["красота", "свобода", "мечта", "звезда", "любовь",
+         "счастье", "природа", "солнце", "тишина", "надежда",
+         "весна", "рассвет", "море", "радуга", "дождь",
+         "облако", "мудрость", "книга", "путешествие", "закат"],
+    tr: ["kelebek", "mutluluk", "özgürlük", "umut", "güneş",
+         "yıldız", "macera", "doğa", "cesaret", "huzur",
+         "gündoğumu", "gökkuşağı", "bahar", "rüzgar", "deniz",
+         "orman", "yağmur", "sevgi", "hayal", "ışık"],
+    ar: ["جمال", "حرية", "سلام", "نجمة", "حب",
+         "أمل", "طبيعة", "شمس", "قمر", "سماء",
+         "بحر", "حكمة", "شجاعة", "حلم", "ربيع",
+         "ضوء", "سعادة", "مغامرة", "صداقة", "هدوء"],
+    hi: ["सुंदरता", "आज़ादी", "सपना", "प्रकृति", "उम्मीद",
+         "खुशी", "सूरज", "चांद", "तारा", "बारिश",
+         "समुद्र", "पहाड़", "हिम्मत", "दोस्ती", "प्यार",
+         "शांति", "यात्रा", "जंगल", "फूल", "संगीत"],
+    ja: ["桜", "夢", "星", "風", "海",
+         "光", "雲", "花", "空", "山",
+         "雨", "雪", "月", "太陽", "森",
+         "愛", "希望", "勇気", "友情", "自然"],
+    zh: ["美丽", "自由", "梦想", "星星", "阳光",
+         "希望", "勇气", "自然", "和平", "幸福",
+         "月亮", "大海", "春天", "彩虹", "智慧",
+         "友谊", "冒险", "花朵", "音乐", "旅行"],
+    ko: ["나비", "자유", "별", "꿈", "사랑",
+         "희망", "용기", "자연", "평화", "행복",
+         "바다", "봄", "무지개", "달", "하늘",
+         "꽃", "음악", "여행", "우정", "햇살"],
+    nl: ["vlinder", "vrijheid", "geluk", "avontuur", "natuur",
+         "droom", "moed", "ster", "regenboog", "zonsondergang",
+         "lente", "oceaan", "reis", "bloem", "stilte",
+         "vrede", "licht", "wind", "muziek", "hoop"],
+    pl: ["motyl", "wolność", "szczęście", "przygoda", "natura",
+         "marzenie", "odwaga", "gwiazda", "tęcza", "wiosna",
+         "ocean", "podróż", "kwiat", "cisza", "pokój",
+         "nadzieja", "światło", "muzyka", "miłość", "piękno"],
+    sv: ["fjäril", "frihet", "lycka", "äventyr", "natur",
+         "dröm", "mod", "stjärna", "regnbåge", "solnedgång",
+         "vår", "hav", "resa", "blomma", "tystnad",
+         "frid", "ljus", "musik", "kärlek", "skönhet"]
+};
+
 // Application State
 let searchHistory = [];
 let bookmarkedWords = [];
@@ -122,13 +190,12 @@ function loadSettings() {
 
         let shortName;
         if (savedLang === "auto") {
-            shortName = "✨ AUTO";
+            shortName = "AUTO";
         } else {
-            const labelText = activeLangOption.textContent.trim();
-            shortName = labelText.slice(0, 4) + savedLang.toUpperCase().slice(0, 2);
+            shortName = savedLang.toUpperCase().slice(0, 2);
         }
         const langLabel = document.getElementById("lang-select-label");
-        if (langLabel) langLabel.textContent = shortName;
+        if (langLabel) langLabel.innerHTML = `<span class="lang-code">${shortName}</span> ${shortName}`;
     }
 
     const wordInput = document.getElementById("word");
@@ -388,8 +455,8 @@ async function getMeaning(wordParam = null, allowAutoCorrect = true) {
             if (opt) {
                 document.querySelectorAll("#lang-select-options li").forEach(li => li.classList.remove("active"));
                 opt.classList.add("active");
-                const shortName = opt.textContent.trim().slice(0, 4) + langToUse.toUpperCase().slice(0, 2);
-                document.getElementById("lang-select-label").textContent = shortName;
+                const shortName = langToUse.toUpperCase().slice(0, 2);
+                document.getElementById("lang-select-label").innerHTML = `<span class="lang-code">${shortName}</span> ${shortName}`;
             }
             activeLanguage = langToUse;
             localStorage.setItem("lexicon_active_language", langToUse);
@@ -956,24 +1023,54 @@ function copyDefinitionToClipboard(word) {
     });
 }
 
-// Word of the Day Picker (Seed-based daily selection)
+// Word of the Day Picker (Language-aware, seed-based daily selection)
 function loadWordOfTheDay() {
     const today = new Date();
-    // Use date elements to generate a unique index for the day
     const daySeed = today.getFullYear() + today.getMonth() + today.getDate();
-    const index = daySeed % WORD_OF_THE_DAY_LIST.length;
-    const wordOfTheDay = WORD_OF_THE_DAY_LIST[index];
 
-    showToast("Displaying today's curated Word of the Day!", "info");
+    // Pick language-appropriate word list
+    const effectiveLang = (activeLanguage === 'auto') ? 'en' : activeLanguage;
+    const langList = LANG_WORD_LISTS[effectiveLang] || WORD_OF_THE_DAY_LIST;
+
+    const index = daySeed % langList.length;
+    const wordOfTheDay = langList[index];
+
+    const langName = getLangName(effectiveLang);
+    showToast(`Word of the Day (${langName})`, "info");
     getMeaning(wordOfTheDay);
 }
 
-// Search Random Word Generator
-function searchRandomWord() {
-    const index = Math.floor(Math.random() * RANDOM_WORDS.length);
-    const randomWord = RANDOM_WORDS[index];
+// Search Random Word Generator (Language-aware with Datamuse fallback)
+async function searchRandomWord() {
+    const effectiveLang = (activeLanguage === 'auto') ? 'en' : activeLanguage;
+    const langList = LANG_WORD_LISTS[effectiveLang] || RANDOM_WORDS;
+    const langName = getLangName(effectiveLang);
 
-    showToast("Searching for a random word...", "info");
+    // For English, try Datamuse API for a truly random word
+    if (effectiveLang === 'en' && navigator.onLine) {
+        try {
+            const topics = ['nature', 'science', 'emotion', 'art', 'food', 'travel', 'music', 'history', 'color', 'weather'];
+            const topic = topics[Math.floor(Math.random() * topics.length)];
+            const response = await fetch(`https://api.datamuse.com/words?topics=${topic}&max=30`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.length > 0) {
+                    const pick = data[Math.floor(Math.random() * data.length)];
+                    showToast(`Random word from "${topic}" topic`, "info");
+                    getMeaning(pick.word);
+                    return;
+                }
+            }
+        } catch (e) {
+            // Fall through to curated list
+        }
+    }
+
+    // Fallback to curated language list
+    const index = Math.floor(Math.random() * langList.length);
+    const randomWord = langList[index];
+
+    showToast(`Random word (${langName})`, "info");
     getMeaning(randomWord);
 }
 
@@ -1827,12 +1924,11 @@ function initLangSelector() {
 
             let shortName;
             if (val === 'auto') {
-                shortName = "✨ AUTO";
+                shortName = "AUTO";
             } else {
-                const textContent = option.textContent.trim();
-                shortName = textContent.slice(0, 4) + val.toUpperCase().slice(0, 2);
+                shortName = val.toUpperCase().slice(0, 2);
             }
-            label.textContent = shortName;
+            label.innerHTML = `<span class="lang-code">${shortName}</span> ${shortName}`;
 
             container.classList.remove("open");
             trigger.setAttribute("aria-expanded", "false");

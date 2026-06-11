@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Corsivo</title>
+    <meta name="description" content="Corsivo Privacy Policy. Your data remains 100% on your device. No accounts, no tracking, no databases.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#090616">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+</head>
+<body>
+    <div class="page-layout">
+        <nav class="page-nav">
+            <a href="index.html" class="page-back-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                Dictionary
+            </a>
+            <a href="index.html" class="nav-brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 4c-3.5 0-7 2.5-8.5 6s-.5 7.5 2 10 7 1.5 8.5-.5" />
+                    <path d="M9 15c.5-2.5 2-5.5 4.5-8 3-3 6.5-4 7.5-3s0 4.5-3 7.5c-2.5 2.5-5.5 4-8 4.5z" />
+                    <path d="M13.5 10.5l6-6" stroke-width="1.5" />
+                    <path d="M9 15l-6 6" stroke-width="1.5" />
+                    <circle cx="3" cy="21" r="0.8" fill="currentColor" />
+                </svg>
+                Corsivo
+            </a>
+        </nav>
+
+        <div class="page-card">
+            <svg class="page-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <h1>Privacy Policy</h1>
+            <p class="page-subtitle">Your data remains yours. 100% client-side.</p>
+
+            <p>We believe online privacy should be simple, clear, and absolute — without standard corporate legalese:</p>
+
+            <ul>
+                <li><strong>No Accounts:</strong> You do not need to register, enter an email, or sign in to explore words. We offer a full experience with zero authentication walls.</li>
+                <li><strong>100% Local Storage:</strong> All your search history logs, saved words (bookmarks), and visual color themes are stored exclusively on your own device inside your browser's LocalStorage.</li>
+                <li><strong>No Databases or Servers:</strong> We do not host backend databases. We have zero tracking tools, cookies, or remote analytics logs. Your word lookups are completely private.</li>
+                <li><strong>API Queries:</strong> Word searches request definitions from the public Free Dictionary API, Wiktionary, and Datamuse API. No personal trackers or identifying information is sent with these requests.</li>
+                <li><strong>No Third-Party Scripts:</strong> Corsivo does not load any third-party analytics, advertising, or tracking scripts. What you see is what runs — nothing more.</li>
+            </ul>
+
+            <h2>Data You Control</h2>
+            <p>You can export all your saved data (bookmarks, notes, history) as a JSON file at any time, or clear it entirely from your browser's settings. We never have access to it.</p>
+        </div>
+
+        <div class="page-footer">
+            &copy; 2026 Corsivo. Words, beautifully slanted.
+        </div>
+    </div>
+
+    <script>
+        const savedTheme = localStorage.getItem("lexicon_theme") || "dark";
+        document.body.className = savedTheme;
+    </script>
+</body>
+</html>

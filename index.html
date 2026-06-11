@@ -77,29 +77,29 @@
                 <!-- Custom Language Dropdown Selector -->
                 <div class="custom-select lang-select" id="lang-select-container">
                     <button class="select-trigger lang-trigger" id="lang-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Select Search Language">
-                        <span id="lang-select-label">🇬🇧 EN</span>
+                        <span id="lang-select-label"><span class="lang-code">EN</span> EN</span>
                         <svg class="select-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
                     <ul class="select-options lang-options" id="lang-select-options" role="listbox">
-                        <li data-value="auto" role="option">✨ Auto Detect</li>
-                        <li data-value="en" role="option" class="active">🇬🇧 English</li>
-                        <li data-value="es" role="option">🇪🇸 Spanish</li>
-                        <li data-value="fr" role="option">🇫🇷 French</li>
-                        <li data-value="de" role="option">🇩🇪 German</li>
-                        <li data-value="it" role="option">🇮🇹 Italian</li>
-                        <li data-value="pt-br" role="option">🇧🇷 Portuguese</li>
-                        <li data-value="ru" role="option">🇷🇺 Russian</li>
-                        <li data-value="tr" role="option">🇹🇷 Turkish</li>
-                        <li data-value="ar" role="option">🇸🇦 Arabic</li>
-                        <li data-value="hi" role="option">🇮🇳 Hindi</li>
-                        <li data-value="ja" role="option">🇯🇵 Japanese</li>
-                        <li data-value="zh" role="option">🇨🇳 Chinese</li>
-                        <li data-value="ko" role="option">🇰🇷 Korean</li>
-                        <li data-value="nl" role="option">🇳🇱 Dutch</li>
-                        <li data-value="pl" role="option">🇵🇱 Polish</li>
-                        <li data-value="sv" role="option">🇸🇪 Swedish</li>
+                        <li data-value="auto" role="option"><span class="lang-code auto"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></span> Auto Detect</li>
+                        <li data-value="en" role="option" class="active"><span class="lang-code">EN</span> English</li>
+                        <li data-value="es" role="option"><span class="lang-code">ES</span> Spanish</li>
+                        <li data-value="fr" role="option"><span class="lang-code">FR</span> French</li>
+                        <li data-value="de" role="option"><span class="lang-code">DE</span> German</li>
+                        <li data-value="it" role="option"><span class="lang-code">IT</span> Italian</li>
+                        <li data-value="pt-br" role="option"><span class="lang-code">PT</span> Portuguese</li>
+                        <li data-value="ru" role="option"><span class="lang-code">RU</span> Russian</li>
+                        <li data-value="tr" role="option"><span class="lang-code">TR</span> Turkish</li>
+                        <li data-value="ar" role="option"><span class="lang-code">AR</span> Arabic</li>
+                        <li data-value="hi" role="option"><span class="lang-code">HI</span> Hindi</li>
+                        <li data-value="ja" role="option"><span class="lang-code">JA</span> Japanese</li>
+                        <li data-value="zh" role="option"><span class="lang-code">ZH</span> Chinese</li>
+                        <li data-value="ko" role="option"><span class="lang-code">KO</span> Korean</li>
+                        <li data-value="nl" role="option"><span class="lang-code">NL</span> Dutch</li>
+                        <li data-value="pl" role="option"><span class="lang-code">PL</span> Polish</li>
+                        <li data-value="sv" role="option"><span class="lang-code">SV</span> Swedish</li>
                     </ul>
                 </div>
 
@@ -348,7 +348,7 @@
     <!-- Connection Status Widget (Offline/Online Popups) -->
     <div class="connection-widget" id="connection-widget"></div>
 
-    <!-- Custom Informational Modal Sheet (About, Privacy, Terms, Pricing, Open Source) -->
+    <!-- Tools Modal (Notebook & Backup) -->
     <div class="info-overlay" id="info-modal">
         <div class="info-card">
             <button class="info-close-btn" onclick="closeInfoModal()" aria-label="Close panel">
@@ -357,77 +357,16 @@
                 </svg>
             </button>
             
-            <!-- Modal Tabs Sidebar -->
+            <!-- Modal Tabs -->
             <div class="info-tabs">
-                <button class="tab-btn active" data-tab="about" onclick="switchInfoTab('about')">About</button>
-                <button class="tab-btn" data-tab="notebook" onclick="switchInfoTab('notebook')">Notebook Manager</button>
-                <button class="tab-btn" data-tab="privacy" onclick="switchInfoTab('privacy')">Privacy</button>
-                <button class="tab-btn" data-tab="terms" onclick="switchInfoTab('terms')">Terms</button>
-                <button class="tab-btn" data-tab="pricing" onclick="switchInfoTab('pricing')">Pricing</button>
-                <button class="tab-btn" data-tab="open-source" onclick="switchInfoTab('open-source')">Open Source & Auth</button>
-                <button class="tab-btn" data-tab="backup" onclick="switchInfoTab('backup')">Backup & Restore</button>
+                <button class="tab-btn active" data-tab="notebook" onclick="switchInfoTab('notebook')">Notebook Manager</button>
+                <button class="tab-btn" data-tab="backup" onclick="switchInfoTab('backup')">Backup &amp; Restore</button>
             </div>
             
-            <!-- Modal Contents Area -->
+            <!-- Modal Contents -->
             <div class="info-content-wrapper">
-                <!-- About Tab -->
-                <div class="tab-content active" id="tab-content-about">
-                    <h2>About Corsivo</h2>
-                    <p class="subtitle">Words, beautifully slanted.</p>
-                    <p>Welcome to <strong>Corsivo</strong>! This project holds a special place in my development journey: it is a modern revival of my very first repository on GitHub. Rebuilt from the ground up, it features a glassmorphic dark design system, fluid slanted text micro-animations, and full offline caching compatibility.</p>
-                    <p>The name <em>Corsivo</em> (Italian for italic or cursive) highlights our goal to present word definitions with exquisite typography, visual transitions, and custom layout setups.</p>
-                </div>
-                
-                <!-- Privacy Tab -->
-                <div class="tab-content" id="tab-content-privacy">
-                    <h2>Privacy Policy</h2>
-                    <p class="subtitle">Your data remains yours. 100% client-side.</p>
-                    <p>We believe online privacy should be simple, clear, and absolute, without standard corporate legalese:</p>
-                    <ul>
-                        <li><strong>No Accounts:</strong> You do not need to register, enter an email, or sign in to explore words. We offer a full experience with zero authentication walls.</li>
-                        <li><strong>100% Local Storage:</strong> All your search history logs, saved words (bookmarks), and visual color themes are stored exclusively on your own device inside your browser's LocalStorage.</li>
-                        <li><strong>No Databases or Servers:</strong> We do not host backend databases. We have zero tracking tools, cookies, or remote analytics logs. Your word lookups are completely private.</li>
-                        <li><strong>API Queries:</strong> Word searches request definitions from the public Free Dictionary API. Related recommendations use the Datamuse API. No personal trackers are sent.</li>
-                    </ul>
-                </div>
-                
-                <!-- Terms Tab -->
-                <div class="tab-content" id="tab-content-terms">
-                    <h2>Terms of Service</h2>
-                    <p class="subtitle">Straightforward, fair-use guidelines.</p>
-                    <p>Our terms of usage are extremely simple:</p>
-                    <ul>
-                        <li><strong>Fair Use:</strong> Search and discover as many words as you need. Please do not run aggressive web scrapers that spam the API servers.</li>
-                        <li><strong>MIT License:</strong> The code for Corsivo is open-source and free to read, fork, clone, or modify under the permissive MIT license parameters.</li>
-                        <li><strong>As-Is Service:</strong> We pull definitions dynamically from public dictionaries. Information is presented "as-is" without warranty.</li>
-                    </ul>
-                </div>
-                
-                <!-- Pricing Tab -->
-                <div class="tab-content" id="tab-content-pricing">
-                    <h2>Pricing</h2>
-                    <p class="subtitle">100% Free Forever.</p>
-                    <p>Corsivo has zero subscription tiers, zero locked features, and zero banner ads:</p>
-                    <ul>
-                        <li><strong>Free Forever:</strong> This app is built out of passion as a portfolio project. You will never be asked for billing details, trials, or premiums.</li>
-                        <li><strong>No Advertisements:</strong> We do not run ads. The layout remains clean, loading fast, and focused on typography definitions.</li>
-                    </ul>
-                </div>
-                
-                <!-- Open Source Tab -->
-                <div class="tab-content" id="tab-content-open-source">
-                    <h2>Open Source & Auth</h2>
-                    <p class="subtitle">Accessible codebase, zero sign-up constraints.</p>
-                    <p>Corsivo is completely transparent and designed without auth limits:</p>
-                    <ul>
-                        <li><strong>Zero Login Constraints:</strong> There are no registration forms, forgot-password scripts, or profiles. The app loads instantly for everyone.</li>
-                        <li><strong>Code Repository:</strong> The codebase is open for public review and contributions on GitHub, showing the journey from my first repository to this modernized revival.</li>
-                        <li><strong>Educational Focus:</strong> Rebuilding this as a pure HTML/CSS/JS single-page application shows that high-fidelity web experiences can be created with zero bloated frameworks.</li>
-                    </ul>
-                </div>
-
                 <!-- Notebook Tab -->
-                <div class="tab-content" id="tab-content-notebook">
+                <div class="tab-content active" id="tab-content-notebook">
                     <h2>Vocabulary Notebook</h2>
                     <p class="subtitle">Search, review, and manage your study notes across all words.</p>
                     <div class="notebook-controls">
@@ -440,7 +379,7 @@
 
                 <!-- Backup & Restore Tab -->
                 <div class="tab-content" id="tab-content-backup">
-                    <h2>Backup & Restore</h2>
+                    <h2>Backup &amp; Restore</h2>
                     <p class="subtitle">Import or export your dictionary data (bookmarks, notes, history).</p>
                     <p>Save all your custom vocabulary data, personal comments, and search logs to a JSON file on your local computer, or restore them anytime.</p>
                     
@@ -467,17 +406,19 @@
     <!-- Footer -->
     <footer>
         <div class="footer-links">
-            <button onclick="openInfoModal('about')">About</button>
-            <span class="footer-divider">•</span>
+            <a href="about.html">About</a>
+            <span class="footer-divider">·</span>
             <button onclick="openInfoModal('notebook')">Notebook</button>
-            <span class="footer-divider">•</span>
-            <button onclick="openInfoModal('privacy')">Privacy</button>
-            <span class="footer-divider">•</span>
-            <button onclick="openInfoModal('terms')">Terms</button>
-            <span class="footer-divider">•</span>
-            <button onclick="openInfoModal('pricing')">Pricing</button>
-            <span class="footer-divider">•</span>
-            <button onclick="openInfoModal('open-source')">Open Source & Auth</button>
+            <span class="footer-divider">·</span>
+            <button onclick="openInfoModal('backup')">Backup</button>
+            <span class="footer-divider">·</span>
+            <a href="privacy.html">Privacy</a>
+            <span class="footer-divider">·</span>
+            <a href="terms.html">Terms</a>
+            <span class="footer-divider">·</span>
+            <a href="pricing.html">Pricing</a>
+            <span class="footer-divider">·</span>
+            <a href="opensource.html">Open Source</a>
         </div>
         <p class="copyright">&copy; 2026 Corsivo. Words, beautifully slanted.</p>
     </footer>
